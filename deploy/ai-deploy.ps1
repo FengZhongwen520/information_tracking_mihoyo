@@ -300,7 +300,7 @@ location ^~ /api/auth/ {
 }
 
 location ^~ /api/images {
-    limit_req zone=ai_images burst=40 nodelay;
+    limit_req zone=ai_images burst=120 nodelay;
     proxy_pass http://127.0.0.1:8080;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
@@ -348,7 +348,7 @@ EOF
 echo "[remote] writing Nginx rate-limit zones"
 sudo tee "$RATE_CONF" >/dev/null <<'EOF'
 limit_req_zone $binary_remote_addr zone=ai_auth:10m rate=20r/m;
-limit_req_zone $binary_remote_addr zone=ai_images:10m rate=120r/m;
+limit_req_zone $binary_remote_addr zone=ai_images:10m rate=600r/m;
 limit_req_zone $binary_remote_addr zone=ai_api:10m rate=600r/m;
 limit_req_status 429;
 EOF

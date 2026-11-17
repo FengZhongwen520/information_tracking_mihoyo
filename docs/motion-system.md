@@ -70,6 +70,13 @@
 - 路由切换通过 `lenis.scrollTo(0, { immediate: true })` 瞬间回顶，不播放整页滚动。
 - 不拦截锚点以外的滚动手势，不做横向滚动或视差。
 
+## 路由切换
+
+- 优先使用浏览器原生 View Transitions API：全部站内 `Link` / `NavLink` / 登录后的 `navigate` 都带 `viewTransition`。
+- 只给页面主体（`.page` / `.auth-page`）设置 `view-transition-name: page`，旧页 `160ms` 淡出并上移 `6px`，新页 `300ms` 淡入并上移 `10px`；顶栏单独命名，避免整页快照一起闪烁。
+- 不支持 View Transitions 的浏览器走 `.route-stage-fallback` 兜底：新页 `260ms` 淡入并上移 `8px`，不会硬切。
+- 首屏不播放兜底动画，避免为了转场牺牲首屏可见速度；`prefers-reduced-motion` 下原生与兜底动画都关闭。
+
 ## 性能约束
 
 - 只动画 `opacity`、`translate`、`scale`、`transform` 和颜色类属性。

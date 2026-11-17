@@ -66,10 +66,18 @@ html {
 }
 
 @supports (view-transition-name: page) {
-  ::view-transition-group(site-header),
-  ::view-transition-old(site-header),
+  ::view-transition-group(site-header) {
+    animation: none;
+  }
+
+  ::view-transition-old(site-header) {
+    animation: none;
+    opacity: 0;
+  }
+
   ::view-transition-new(site-header) {
     animation: none;
+    opacity: 1;
   }
 
   ::view-transition-group(page) {
