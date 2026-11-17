@@ -1,0 +1,18 @@
+# Java
+backend/target/
+backend/data/
+backend/backups/
+backend/logs/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+
+# Local
+*.log
+*.key
+*.mv.db
+*.trace.db
+.DS_Store
+Thumbs.db

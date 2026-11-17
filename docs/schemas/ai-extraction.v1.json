@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/ai-extraction.v1.json",
+  "title": "AIExtractionV1",
+  "description": "LLM 单次抽取输出契约。只允许抽取原文事实，不允许推断活动状态，不允许自评最终置信度。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "subject_name",
+    "category",
+    "region",
+    "platform",
+    "times",
+    "milestones",
+    "key_facts",
+    "evidence",
+    "ambiguities",
+    "notes"
+  ],
+  "properties": {
+    "subject_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120,
+      "description": "信息主体名称，使用原文中的正式名称"
+    },
+    "category": {
+      "type": "string",
+      "enum": ["game_event", "sale", "preorder", "maintenance", "season", "other"]
+    },
+    "region": {
+      "type": ["string", "null"],
+      "maxLength": 40,
+      "description": "适用区服/地区，如 CN、Global、日服；无法确定填 null"
+    },
+    "platform": {
+      "type": ["string", "null"],
+      "maxLength": 80
+    },
+    "times": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start_at", "end_at", "timezone", "precision", "raw_text", "resolution_basis"],
+      "properties": {
+        "start_at": {
+          "type": ["string", "null"],
+          "description": "ISO 8601 且必须带时区偏移，如 2026-11-20T10:00:00+08:00；原文未给出则为 null"
+        },
+        "end_at": {
+          "type": ["string", "null"],
+          "description": "ISO 8601 且必须带时区偏移；原文未给出则为 null，禁止猜测"
+        },
+        "timezone": {
+          "type": "string",
+          "description": "IANA 时区名，如 Asia/Shanghai；无法确定填 unknown"
+        },
+        "precision": {
+          "type": "string",
+          "enum": ["exact", "minute", "date", "month", "relative", "unknown"]
+        },
+        "raw_text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "原文中描述起止时间的原句，必须逐字摘录"
+        },
+        "resolution_basis": {
+          "type": ["string", "null"],
+          "maxLength": 300,
+          "description": "相对时间的推导依据，如 页面发布日 2026-11-20 + 本周日 -> 2026-11-22；绝对时间填 null"
+        }
+      }
+    },
+    "milestones": {
+      "type": "array",
+      "maxItems": 6,
+      "description": "活动内的关键子节点，如兑换截止、结算日、卡池关闭",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "at", "raw_text"],
+        "properties": {
+          "label": { "type": "string", "minLength": 1, "maxLength": 40 },
+          "at": {
+            "type": ["string", "null"],
+            "description": "ISO 8601 带偏移；未知为 null"
+          },
+          "raw_text": { "type": "string", "minLength": 1, "maxLength": 300 }
+        }
+      }
+    },
+    "key_facts": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "value"],
+        "properties": {
+          "label": { "type": "string", "minLength": 1, "maxLength": 30 },
+          "value": { "type": "string", "minLength": 1, "maxLength": 300 }
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["url", "quote", "published_at"],
+        "properties": {
+          "url": { "type": "string", "minLength": 1, "maxLength": 2000 },
+          "quote": { "type": "string", "minLength": 1, "maxLength": 500 },
+          "published_at": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "ambiguities": {
+      "type": "array",
+      "maxItems": 5,
+      "description": "无法确定或存在冲突的点，例如 国服与国际服结束时间不同",
+      "items": { "type": "string", "maxLength": 200 }
+    },
+    "notes": {
+      "type": ["string", "null"],
+      "maxLength": 500
+    }
+  }
+}

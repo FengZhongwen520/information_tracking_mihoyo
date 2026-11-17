@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/search-run.v1.json",
+  "title": "SearchRunV1",
+  "description": "一次搜索的审计记录：查询词、候选源、排序分、采用结果、费用。用于回溯与调优，不直接给前端渲染事实。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "search_run_id",
+    "tracker_id",
+    "queries",
+    "provider",
+    "started_at",
+    "finished_at",
+    "status",
+    "candidates",
+    "selected_urls",
+    "cost",
+    "error"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "search_run_id": { "type": "string", "minLength": 1 },
+    "tracker_id": { "type": "string", "minLength": 1 },
+    "queries": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 6,
+      "items": { "type": "string", "minLength": 1, "maxLength": 200 }
+    },
+    "provider": {
+      "type": "string",
+      "description": "搜索服务标识，如 tavily、exa、bing、serper、model_native"
+    },
+    "started_at": { "type": "string" },
+    "finished_at": { "type": ["string", "null"] },
+    "status": {
+      "type": "string",
+      "enum": ["success", "partial", "failed"]
+    },
+    "candidates": {
+      "type": "array",
+      "maxItems": 30,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "url",
+          "title",
+          "snippet",
+          "published_at",
+          "rank",
+          "score",
+          "selected",
+          "reject_reason"
+        ],
+        "properties": {
+          "url": { "type": "string", "minLength": 1, "maxLength": 2000 },
+          "title": { "type": "string", "maxLength": 300 },
+          "snippet": { "type": "string", "maxLength": 1000 },
+          "published_at": { "type": ["string", "null"] },
+          "rank": { "type": "integer", "minimum": 1 },
+          "score": { "type": "number", "minimum": 0, "maximum": 1 },
+          "selected": { "type": "boolean" },
+          "reject_reason": { "type": ["string", "null"], "maxLength": 200 }
+        }
+      }
+    },
+    "selected_urls": {
+      "type": "array",
+      "maxItems": 5,
+      "items": { "type": "string", "minLength": 1, "maxLength": 2000 }
+    },
+    "cost": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["search", "llm", "total", "currency"],
+      "properties": {
+        "search": { "type": "number", "minimum": 0 },
+        "llm": { "type": "number", "minimum": 0 },
+        "total": { "type": "number", "minimum": 0 },
+        "currency": { "type": "string", "enum": ["USD", "CNY"] }
+      }
+    },
+    "error": { "type": ["string", "null"], "maxLength": 1000 }
+  }
+}

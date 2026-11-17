@@ -1,0 +1,62 @@
+server:
+  port: 8080
+  shutdown: graceful
+  error:
+    include-message: always
+
+spring:
+  application:
+    name: ai-tracking
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  datasource:
+    url: jdbc:h2:file:./data/tracker;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate.jdbc.time_zone: Asia/Shanghai
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 1
+    baseline-description: existing-schema
+    locations: classpath:db/migration
+  h2:
+    console:
+      enabled: ${H2_CONSOLE_ENABLED:false}
+      path: /h2-console
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+    serialization:
+      write-dates-as-timestamps: false
+
+app:
+  images:
+    cache-dir: ${IMAGE_CACHE_DIR:./data/images}
+    max-cache-bytes: ${IMAGE_CACHE_MAX_BYTES:2147483648}
+    max-age-days: ${IMAGE_CACHE_MAX_AGE_DAYS:30}
+  backup:
+    enabled: ${BACKUP_ENABLED:true}
+    dir: ${BACKUP_DIR:./backups/data}
+    retention-days: ${BACKUP_RETENTION_DAYS:30}
+    cron: ${BACKUP_CRON:0 20 3 * * *}
+  hoyoverse:
+    enabled: ${HOYOVERSE_SYNC_ENABLED:true}
+    base-url: ${HOYOVERSE_BASE_URL:https://api.ennead.cc/mihoyo}
+    games: ${HOYOVERSE_GAMES:sr,ys,zzz}
+    locale: ${HOYOVERSE_LOCALE:zh-cn}
+    sync-interval-ms: ${HOYOVERSE_SYNC_INTERVAL_MS:1800000}
+    initial-delay-ms: ${HOYOVERSE_SYNC_INITIAL_DELAY_MS:15000}
+    manual-sync-cooldown-ms: ${HOYOVERSE_MANUAL_SYNC_COOLDOWN_MS:120000}
+    timeout-seconds: ${HOYOVERSE_TIMEOUT_SECONDS:30}
+  auth:
+    secret: ${AUTH_SECRET:}
+    token-ttl-hours: ${AUTH_TOKEN_TTL_HOURS:168}
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+    rsa-key-path: ${AUTH_RSA_KEY_PATH:./data/auth-rsa-private.key}
+
