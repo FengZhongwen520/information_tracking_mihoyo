@@ -30,6 +30,19 @@ const startValue = (activity: Activity) => {
 const compare = (left: number, right: number) => (left === right ? 0 : left < right ? -1 : 1)
 const endedRank = (activity: Activity) => (activity.status === 'ended' ? 1 : 0)
 
+type ChallengeWindow = 'ended' | 'current' | 'upcoming'
+
+function challengeWindow(activity: Activity, now: number): ChallengeWindow {
+  const start = startValue(activity)
+  const end = endValue(activity)
+  if (Number.isFinite(end) && now >= end) return 'ended'
+  if (Number.isFinite(start) && now < start) return 'upcoming'
+  if (Number.isFinite(start) || Number.isFinite(end)) return 'current'
+  if (activity.status === 'ended') return 'ended'
+  if (activity.status === 'upcoming') return 'upcoming'
+  return 'current'
+}
+
 export function sortActivities(list: Activity[], mode: SortMode): Activity[] {
   return [...list].sort((left, right) => {
     const ended = compare(endedRank(left), endedRank(right))
@@ -56,6 +69,7 @@ export function buildChallengeGroups(
   all: Activity[],
   keys: Set<string>,
   mode: SortMode,
+  now = Date.now(),
 ): ChallengeGroup[] {
   const buckets = new Map<string, Activity[]>()
   for (const activity of all) {
@@ -68,18 +82,37 @@ export function buildChallengeGroups(
 
   const groups: ChallengeGroup[] = []
   for (const [key, items] of buckets) {
-    const ordered = sortActivities(items, 'urgent')
-    const live = ordered.filter((item) => item.status !== 'ended')
-    const current = live[0] ?? ordered[ordered.length - 1]
+    const currentPeriods = items
+      .filter((item) => challengeWindow(item, now) === 'current')
+      .sort((left, right) => (
+        compare(endValue(left), endValue(right))
+        || compare(startValue(left), startValue(right))
+      ))
+    const upcomingPeriods = items
+      .filter((item) => challengeWindow(item, now) === 'upcoming')
+      .sort((left, right) => (
+        compare(startValue(left), startValue(right))
+        || compare(endValue(left), endValue(right))
+      ))
+    const endedPeriods = items
+      .filter((item) => challengeWindow(item, now) === 'ended')
+      .sort((left, right) => (
+        compare(endValue(right), endValue(left))
+        || compare(startValue(right), startValue(left))
+      ))
+    const current = currentPeriods[0] ?? upcomingPeriods[0] ?? endedPeriods[0]
     if (!current) continue
-    const ended = ordered.filter((item) => item.status === 'ended' && item.id !== current.id)
+    const previous = endedPeriods.find((item) => item.id !== current.id) ?? null
+    const next = currentPeriods.length > 0
+      ? upcomingPeriods[0] ?? currentPeriods[1] ?? null
+      : upcomingPeriods[1] ?? null
     groups.push({
       key,
       stage: current.challenge_stage ?? '',
       game: current.game,
       current,
-      next: live[0] ? live[1] ?? null : null,
-      previous: ended.length ? ended[ended.length - 1] : null,
+      next,
+      previous,
     })
   }
 

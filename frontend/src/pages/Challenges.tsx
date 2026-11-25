@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api'
 import { ChallengeBoard } from '../components/ChallengeBoard'
@@ -23,10 +23,10 @@ export function Challenges({ user }: Props) {
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [hideCompleted, setHideCompleted] = useState(true)
   const [sortMode, setSortMode] = useState<SortMode>('urgent')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [now, setNow] = useState(() => Date.now())
   const canEdit = Boolean(user)
   const localGames = useLocalGames()
 
@@ -45,6 +45,11 @@ export function Challenges({ user }: Props) {
   }
 
   useLiveRefresh(load)
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000)
+    return () => window.clearInterval(timer)
+  }, [])
 
   async function toggle(activity: Activity) {
     if (!canEdit) return
@@ -90,13 +95,10 @@ export function Challenges({ user }: Props) {
       const key = challengeKey(item)
       if (key) keys.add(key)
     }
-    const built = buildChallengeGroups(visibleActivities, keys, sortMode)
-    return canEdit && hideCompleted
-      ? built.filter((group) => !group.current.completed)
-      : built
-  }, [visibleActivities, sortMode, hideCompleted, canEdit])
+    return buildChallengeGroups(visibleActivities, keys, sortMode, now)
+  }, [visibleActivities, sortMode, now])
 
-  useReveal([loading, activities.length, hideCompleted, sortMode])
+  useReveal([loading, activities.length, sortMode])
 
   return (
     <main className="page">
@@ -104,6 +106,7 @@ export function Challenges({ user }: Props) {
         <h1>挑战看板</h1>
         <p className="intro-copy">
           虚构叙事、混沌回忆、异相仲裁、末日幻影与幽境危战按周期汇总。每张卡显示当期和相邻一期的结束时间。
+          已完成的当期卡片会保留到轮期结束，随后自动切换到下一期。
           {!canEdit && ' 登录后可以标记当期完成。'}
         </p>
       </section>
@@ -149,19 +152,6 @@ export function Challenges({ user }: Props) {
                   ))}
                 </select>
               </label>
-              {canEdit && (
-                <label className="check-inline">
-                  <input
-                    type="checkbox"
-                    checked={hideCompleted}
-                    onChange={(event) => setHideCompleted(event.target.checked)}
-                  />
-                  <span className="switch-track" aria-hidden="true">
-                    <span />
-                  </span>
-                  <span>仅看未完成</span>
-                </label>
-              )}
             </div>
           </div>
         </div>
@@ -179,8 +169,8 @@ export function Challenges({ user }: Props) {
         </div>
       ) : groups.length === 0 ? (
         <div className="empty-panel" key="no-results">
-          <strong>没有符合条件的挑战</strong>
-          <p>关闭「仅看未完成」，或等待下一轮数据同步。</p>
+          <strong>暂时没有挑战数据</strong>
+          <p>等待数据同步完成后再试。</p>
         </div>
       ) : (
         <ChallengeBoard groups={groups} busyId={busyId} canEdit={canEdit} onToggle={toggle} />
